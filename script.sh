@@ -6,13 +6,17 @@ set -e
 IP_FIXO="192.168.56.201"
 NETMASK="255.255.255.0"
 NIC="enp0s8"
-DOMAIN="<seu_dominio>.local"
+DOMAIN="edmario.local"
 WEB_DIR="/var/www/html"
-SITE_URL=""
+SITE_URL="https://templatemo.com/download/templatemo_602_graph_page"
 ZONE_DIR="/var/named"
 ZONE_FILE="$ZONE_DIR/$DOMAIN.zone"
 DNS_CONF="/etc/named.conf"
 
+
+log()  { echo -e "[*] $*"; }
+ok()   { echo -e "[OK] $*"; }
+erro() { echo -e "[ERROR] $*" >&2; exit 1; }
 
 configurar_ip() {
     log "Configurando IP na interface $NIC..."
@@ -104,7 +108,7 @@ EOF
 
 
 main() {
-    log "=== INICIANDO CONFIGURAÇÃO ==="
+    log "INICIANDO CONFIGURAÇÃO"
     configurar_ip
     instalar_dependencias
     iniciar_webserver
