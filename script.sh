@@ -6,48 +6,38 @@ set -e
 IP_FIXO="192.168.56.201"
 NETMASK="255.255.255.0"
 NIC="enp0s8"
-DOMAIN="kauezindugrau2.local"
+DOMAIN="<seu_dominio>.local"
 WEB_DIR="/var/www/html"
-SITE_URL="https://www.tooplate.com/download/2108_dashboard"
+SITE_URL=""
 ZONE_DIR="/var/named"
 ZONE_FILE="$ZONE_DIR/$DOMAIN.zone"
 DNS_CONF="/etc/named.conf"
 
-# CORES PARA LOG
-YELLOW='\033[38;5;214m'  
-GREEN='\033[38;5;37m'     
-RED='\033[38;5;203m'     
-NC='\033[0m'
 
-log()   { echo -e "${YELLOW}[→]${NC} $1"; }
-ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
-erro()  { echo -e "${RED}[✗]${NC} $1"; exit 1; }
-
-# CONFIGURAR IP 
 configurar_ip() {
     log "Configurando IP na interface $NIC..."
     ifconfig "$NIC" "$IP_FIXO" netmask "$NETMASK" up || erro "Falha ao configurar IP"
     ok "IP configurado: $IP_FIXO"
 }
 
-# INSTALAR DEPENDÊNCIAS
+
 instalar_dependencias() {
-    log "Instalando o Apache e as Ferramentas..."
+    log "Instalando Apache + Ferramentas..."
     yum install -y httpd wget unzip bind bind-utils net-tools >/dev/null || erro "Falha no yum install"
-    ok "Pacotes instalados"
+    ok "Pacotes baixados e instalados"
 }
 
-# INICIAR SERVIDOR WEB
+
 iniciar_webserver() {
-    log "Inicializando o Apache..."
+    log "Iniciando Apache..."
     systemctl enable --now httpd >/dev/null
     systemctl is-active --quiet httpd || erro "Apache não iniciou"
     ok "Apache funcionando"
 }
 
-# INSTALAR e publicar o site
+
 configurar_site() {
-    log "Publicando o site"
+    log "publicando site..."
 
     rm -rf "$WEB_DIR"/*
     wget -q "$SITE_URL" -O /tmp/site.zip || erro "Falha ao baixar site"
@@ -56,19 +46,17 @@ configurar_site() {
     mkdir /tmp/site_extract
     unzip -q /tmp/site.zip -d /tmp/site_extract || erro "Falha ao extrair site"
 
-    # Detecta automaticamente a pasta onde o conteúdo foi extraído
     SITE_FOLDER=$(find /tmp/site_extract -mindepth 1 -maxdepth 1 -type d | head -n 1)
 
-    # Move o CONTEÚDO da pasta para /var/www/html
     mv "$SITE_FOLDER"/* "$WEB_DIR"/ || erro "Falha ao mover arquivos do site"
 
     chown -R apache:apache "$WEB_DIR"
-    ok "O site foi publicado em: http://$IP_FIXO"
+    ok "Site publicado aqui: http://$IP_FIXO"
 }
 
-# CONFIGURAR o DNS
+
 configurar_dns() {
-    log "Configurando o DNS "
+    log "Configurando DNS com Bind..."
 
     echo "$DOMAIN" > /etc/hostname
 
@@ -111,18 +99,18 @@ EOF
     named-checkzone "$DOMAIN" "$ZONE_FILE" || erro "Erro no arquivo de zona"
 
     systemctl enable --now named >/dev/null || erro "Erro ao iniciar Bind"
-    ok "DNS configurado e rodando"
+    ok "DNS configurado corretamente"
 }
 
-# executando
+
 main() {
-    log " inicializando a configuração "
+    log "=== INICIANDO CONFIGURAÇÃO ==="
     configurar_ip
     instalar_dependencias
     iniciar_webserver
     configurar_site
     configurar_dns
-    ok "Configuração concluída!"
+    ok "Configuração feita!"
     echo -e "\nAcesse: http://$IP_FIXO"
     echo "Ou configure /etc/hosts em outra máquina:"
     echo "   $IP_FIXO  $DOMAIN  www.$DOMAIN"
